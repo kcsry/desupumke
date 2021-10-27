@@ -3,19 +3,19 @@ import * as Phaser from "phaser";
 import desukun1 from "./img/desukun1.png";
 import desukun2 from "./img/desukun2.png";
 import grass from "./img/grass1.png";
-import puff from "./img/puff.png";
-import leaf1 from "./img/leaf.png";
-import leaf2 from "./img/leaf2.png";
-import leaf3 from "./img/leaf3.png";
-import leaf4 from "./img/leaf4.png";
-import birb from "./mus/birb.mp3";
+import puff from "./img/bloodecchi.png";
+import damnedSouls from "./mus/DESUNE_DAMNEDSOULS_v666.mp3";
 import bad from "./mus/bad.mp3";
 import tada from "./mus/tada.mp3";
-import music from "./mus/win.mp3";
-import pr3 from "./mus/pr3.mp3";
+import winMusic from "./mus/desWEENwin_6.mp3";
+import motor from "./mus/ch2.mp3";
 import desumask from "./desumask";
 import gothicImg from "./img/gothic_0.png";
 import gothicCfg from "./img/gothic.xml?url";
+import ghoulImg from "./img/ghoul_0.png";
+import ghoulCfg from "./img/ghoul.xml?url";
+
+const pumkes = import.meta.globEager("./img/pumke*.png");
 
 const WIDTH = 580;
 const HEIGHT = 400;
@@ -53,6 +53,14 @@ function getRank(score: number): string {
   return letter + plus;
 }
 
+const CHOIR_SOUND = "birb";
+
+const MOTOR_SOUND = "motor";
+
+const WIN_MUSIC = "music";
+
+const DESUKUN_SPEED = 220;
+
 class GameScene extends Phaser.Scene {
   private desukun: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody = null as any;
   private particles: Phaser.GameObjects.Particles.ParticleEmitterManager = null as any;
@@ -61,11 +69,13 @@ class GameScene extends Phaser.Scene {
   private scoreText: Phaser.GameObjects.BitmapText = null as any;
   private rankText: Phaser.GameObjects.BitmapText = null as any;
   private helpText: Phaser.GameObjects.BitmapText = null as any;
-  private birbs: Phaser.Sound.WebAudioSound = null as any;
+  private choirOfDamned: Phaser.Sound.WebAudioSound = null as any;
   private motor: Phaser.Sound.WebAudioSound = null as any;
   private timer: Phaser.Time.TimerEvent = null as any;
+  private readonly pumkeSpriteNames: string[] = [];
   private score = 0;
   private timeElapsed = 0;
+
   constructor() {
     super({ key: "GameScene" });
   }
@@ -75,17 +85,18 @@ class GameScene extends Phaser.Scene {
     this.load.image("desukun2", desukun2);
     this.load.image("grass", grass);
     this.load.image("puff", puff);
-    this.load.image("leaf1", leaf1);
-    this.load.image("leaf2", leaf2);
-    this.load.image("leaf3", leaf3);
-    this.load.image("leaf4", leaf4);
-    this.load.audio("birb", birb);
-    this.load.audio("motor", pr3);
+    Object.entries(pumkes).forEach(([name, urlModule]) => {
+      this.load.image(name, urlModule.default);
+      this.pumkeSpriteNames.push(name);
+    });
+    this.load.audio(CHOIR_SOUND, damnedSouls);
+    this.load.audio(MOTOR_SOUND, motor);
     this.load.audio("bad", bad);
     this.load.audio("tada", tada);
-    this.load.audio("music", music);
+    this.load.audio(WIN_MUSIC, winMusic);
 
     this.load.bitmapFont("gothic", gothicImg, gothicCfg);
+    this.load.bitmapFont("ghoul", ghoulImg, ghoulCfg);
   }
 
   create(): void {
@@ -94,32 +105,38 @@ class GameScene extends Phaser.Scene {
     this.leaves = [];
     this.add.tileSprite(WIDTH / 2, HEIGHT / 2, WIDTH, HEIGHT, "grass");
 
-    const scale = 260;
-    const leafSpriteNames = ["leaf1", "leaf2", "leaf3", "leaf4"];
-    for (let i = 0; i < 750; i++) {
+    const scale = 280;
+    for (let i = 0; i < 300; i++) {
       const [fx, fy] = choice(desumask);
-      const x = 160 + fx * scale + Math.random() * 3;
-      const y = 15 + fy * scale + Math.random() * 3;
-      const spr = this.physics.add.sprite(x, y, choice(leafSpriteNames));
+      const x = Math.floor(160 + fx * scale + Math.random() * 3);
+      const y = Math.floor(15 + fy * scale + Math.random() * 3);
+      const spr = this.physics.add.sprite(x, y, choice(this.pumkeSpriteNames));
       spr.flipX = Math.random() < 0.5;
-      spr.flipY = Math.random() < 0.5;
+      // spr.flipY = Math.random() < 0.5;
       spr.body.setDrag(rand(100, 150), rand(100, 150));
       spr.body.setAngularDrag(500);
       // spr.body.setFriction(0.3, 0.3);
       this.leaves.push(spr);
     }
 
-    this.desukun = this.physics.add.sprite(55, 55, "desukun1");
+    this.desukun = this.physics.add.sprite(
+      WIDTH / 2 + ((rand(0.8, 0.9) * WIDTH) / 2) * (rand(0, 1) < 0.5 ? -1 : 1),
+      rand(55, 300),
+      "desukun1"
+    );
 
     this.particles = this.add.particles("puff");
 
     this.emitter = this.particles.createEmitter({
       speed: 60,
-      scale: { start: 0.3, end: 0 },
-      alpha: { start: 0.3, end: 0 },
-      blendMode: "ADD",
+      scale: { start: 3, end: 1 },
+      alpha: 0.9,
       on: false,
       frequency: 70,
+      gravityY: 1000,
+      accelerationY: -150,
+      accelerationX: { min: -150, max: 150 },
+      lifespan: 750,
     });
 
     this.emitter.startFollow(this.desukun);
@@ -127,26 +144,35 @@ class GameScene extends Phaser.Scene {
     this.scoreText = this.add.bitmapText(5, 5, "gothic", "hello");
     this.scoreText.blendMode = "ADD";
 
-    this.rankText = this.add.bitmapText(WIDTH / 2, HEIGHT / 2, "gothic", "");
+    this.rankText = this.add.bitmapText(WIDTH / 2, HEIGHT / 3, "ghoul", "");
     this.rankText.setOrigin(0.5, 0.5);
     this.rankText.setScale(3, 3);
     this.rankText.setCenterAlign();
-    this.rankText.blendMode = "ADD";
 
     this.helpText = this.add.bitmapText(
       WIDTH / 2,
       HEIGHT / 2,
-      "gothic",
-      "HELP DESU-KUN CLEAN UP LAWN!!\nUSE YOUR MOUSE !\nGOOD SCORE = EXTRA PRIZE ..."
+      "ghoul",
+      [
+        "KONNICHIWASSUP ! ! !",
+        "EVIL PUMPKINS ARE INVADING",
+        "MURDER-DESU-KUN'S HOME ! !",
+        "HELP YEET THEM WITH MOUSE !",
+        "GOOD SCORE = EXTRA PRIZE ;-)",
+      ].join("\n")
     );
     this.helpText.setOrigin(0.5, 0.5);
-    this.helpText.setScale(2, 2);
-    this.helpText.blendMode = "ADD";
+    this.helpText.setScale(1.5, 1.5);
+    this.helpText.align = 1;
+    this.helpText.letterSpacing = 2;
+    // this.helpText.blendMode = "ADD";
 
-    this.birbs = this.sound.add("birb") as Phaser.Sound.WebAudioSound;
-    this.birbs.addMarker(LOOP_CONFIG);
-    this.birbs.play("loop");
-    this.motor = this.sound.add("motor") as Phaser.Sound.WebAudioSound;
+    this.choirOfDamned = this.sound.add(
+      CHOIR_SOUND
+    ) as Phaser.Sound.WebAudioSound;
+    this.choirOfDamned.addMarker(LOOP_CONFIG);
+    this.choirOfDamned.play("loop");
+    this.motor = this.sound.add(MOTOR_SOUND) as Phaser.Sound.WebAudioSound;
     this.motor.addMarker(LOOP_CONFIG);
     this.motor.setVolume(0);
 
@@ -170,7 +196,7 @@ class GameScene extends Phaser.Scene {
         this.time.addEvent({
           delay: 1500,
           callback: () => {
-            music = this.sound.add("music") as Phaser.Sound.WebAudioSound;
+            music = this.sound.add(WIN_MUSIC) as Phaser.Sound.WebAudioSound;
             music.play();
           },
         });
@@ -178,15 +204,14 @@ class GameScene extends Phaser.Scene {
       const retry = this.add.bitmapText(
         WIDTH / 2,
         HEIGHT * 0.8,
-        "gothic",
+        "ghoul",
         "[ RETRY! ]"
       );
       retry.setOrigin(0.5, 0.5);
       retry.setScale(2, 2);
-      retry.blendMode = "ADD";
       retry.setInteractive();
       retry.on("pointerdown", () => {
-        this.birbs.destroy();
+        this.choirOfDamned.destroy();
         if (music) music.destroy();
         this.scene.restart();
       });
@@ -233,7 +258,7 @@ class GameScene extends Phaser.Scene {
         desukun.flipX = desukun.body.velocity.x > 0;
       }
       this.emitter.followOffset.set(-60 * (desukun.flipX ? -1 : 1), 0);
-      this.physics.moveToObject(desukun, ptr, 180);
+      this.physics.moveToObject(desukun, ptr, DESUKUN_SPEED);
       this.leaves.forEach((l) => {
         const rawDistanceSqr = Phaser.Math.Distance.BetweenPointsSquared(
           desukun,
@@ -256,7 +281,7 @@ class GameScene extends Phaser.Scene {
           x: x * rand(0.2, 0.5) * blowForceMul,
           y: y * rand(0.2, 0.5) * blowForceMul,
         });
-        l.body.angularVelocity += 15 * Math.cos(angle);
+        l.body.angularVelocity += 35 * Math.cos(angle);
         blows++;
       });
     } else {

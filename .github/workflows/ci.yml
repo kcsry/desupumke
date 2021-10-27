@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: "14.x"
       - run: yarn
-      - run: yarn build --base=/desuleaf/
+      - run: yarn build --base=/desupumke/
         env:
           GENERATE_SOURCEMAP: "false"
       - name: Deploy

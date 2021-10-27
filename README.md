@@ -1,6 +1,6 @@
-# Desuleaf
+# Desupumke
 
-_eli Desu-kunin lehtipuhallinpeli_
+_eli Desu-kunin moottorisahapeli_
 
 ## Development
 
@@ -13,14 +13,15 @@ The `main` branch is automatically deployed to Github Pages with Github Actions.
 
 ## Credits
 
-* Gameplay code & sounds & additional art: [akx](https://github.com/akx)
+* Gameplay code & sounds & additional art & pumpkins: [akx](https://github.com/akx)
 * Desu-kun sprite: [reggy](https://twitter.com/regzoz)
+* Background music: the Desucon Choir of the Damned & [akx](https://github.com/akx)
 * Music: [Aki Hata - DESUCONDESU](https://metroforterecords.bandcamp.com/) arranged for the leaf blower by [akx](https://github.com/akx)
 
 ## Acknowledgements
 
 * Grass tile: [Bonsaiheldin @ Open Game Art](https://opengameart.org/content/grass-tileset-16x16)
-* Puff sprite: Source unknown :(
+* Blood sprite: https://www.pixilart.com/art/random-blood-splatter-d2d9543e6df153f
 
 ## License
 
